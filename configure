@@ -21517,7 +21517,7 @@ if test "${ac_cv_lib_png_png_create_read_struct+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
   ac_check_lib_save_LIBS=$LIBS
-LIBS="-lpng -lz -lm $LIBS"
+LIBS="-lpng  $LIBS"
 cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -21574,7 +21574,7 @@ fi
 echo "${ECHO_T}$ac_cv_lib_png_png_create_read_struct" >&6; }
 if test $ac_cv_lib_png_png_create_read_struct = yes; then
 
-PNG_LIBS="-lpng -lz -lm"
+PNG_LIBS="-lpng"
 
 
 else
@@ -21585,7 +21585,7 @@ if test "${ac_cv_lib_png10_png_create_read_struct+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
   ac_check_lib_save_LIBS=$LIBS
-LIBS="-lpng10 -lz -lm $LIBS"
+LIBS="-lpng10  $LIBS"
 cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -21642,7 +21642,7 @@ fi
 echo "${ECHO_T}$ac_cv_lib_png10_png_create_read_struct" >&6; }
 if test $ac_cv_lib_png10_png_create_read_struct = yes; then
 
-  PNG_LIBS="-lpng10 -lz -lm"
+  PNG_LIBS="-lpng10"
 
 
 else
@@ -21653,7 +21653,7 @@ if test "${ac_cv_lib_png12_png_create_read_struct+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
   ac_check_lib_save_LIBS=$LIBS
-LIBS="-lpng12 -lz -lm $LIBS"
+LIBS="-lpng12  $LIBS"
 cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -21710,7 +21710,7 @@ fi
 echo "${ECHO_T}$ac_cv_lib_png12_png_create_read_struct" >&6; }
 if test $ac_cv_lib_png12_png_create_read_struct = yes; then
 
-    PNG_LIBS="-lpng12 -lz -lm"
+    PNG_LIBS="-lpng12"
 
 
 else
