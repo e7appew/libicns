@@ -1,3 +1,10 @@
+libicns (0.7.1-1.1) unstable; urgency=low
+
+  * Non-maintainer upload.
+  * Don't ship .la files (Closes: #621618).
+
+ -- Luk Claes <luk@debian.org>  Wed, 22 Jun 2011 08:21:57 +0200
+
 libicns (0.7.1-1) unstable; urgency=low
 
   * New upstream release
