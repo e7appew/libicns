@@ -1,6 +1,6 @@
 /*
 File:       icns.h
-Copyright (C) 2001-2008 Mathew Eis <mathew@eisbox.net>
+Copyright (C) 2001-2012 Mathew Eis <mathew@eisbox.net>
 Copyright (C) 2002 Chenxiao Zhao <chenxiao.zhao@gmail.com>
 
 With the exception of the limited portions mentiond, this library
@@ -88,7 +88,11 @@ typedef struct icns_icon_info_t
 
 /*  icns element type constants */
 
+#define ICNS_TABLE_OF_CONTENTS        0x544F4320  // "TOC "
+
 #define ICNS_ICON_VERSION             0x69636E56  // "icnV"
+
+#define ICNS_1024x1024_32BIT_ARGB_DATA 0x69633130 // "ic10"
 
 #define ICNS_512x512_32BIT_ARGB_DATA  0x69633039  // "ic09"
 #define ICNS_256x256_32BIT_ARGB_DATA  0x69633038  // "ic08"
@@ -123,6 +127,12 @@ typedef struct icns_icon_info_t
 #define ICNS_16x12_8BIT_DATA          0x69636D38  // "icm8"
 
 #define ICNS_32x32_1BIT_ICON          0x49434F4E  // "ICON"
+
+#define ICNS_TILE_VARIANT             0x74696C65  // "tile"
+#define ICNS_ROLLOVER_VARIANT         0x6F766572  // "over"
+#define ICNS_DROP_VARIANT             0x64726F70  // "drop"
+#define ICNS_OPEN_VARIANT             0x6F70656E  // "open"
+#define ICNS_OPEN_DROP_VARIANT        0x6F647270  // "odrp"
 
 #define ICNS_NULL_DATA                0x00000000 
 #define ICNS_NULL_MASK                0x00000000 

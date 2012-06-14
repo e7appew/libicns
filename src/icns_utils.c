@@ -1,6 +1,6 @@
 /*
 File:       icns_utils.c
-Copyright (C) 2001-2008 Mathew Eis <mathew@eisbox.net>
+Copyright (C) 2001-2012 Mathew Eis <mathew@eisbox.net>
 
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public
@@ -46,6 +46,8 @@ icns_uint32_t icns_get_element_order(icns_type_t iconType)
 	{
 	case ICNS_ICON_VERSION:
 		return 100;
+	case ICNS_1024x1024_32BIT_ARGB_DATA:
+		return 23;
 	case ICNS_512x512_32BIT_ARGB_DATA:
 		return 22;
 	case ICNS_256x256_32BIT_ARGB_DATA:
@@ -90,6 +92,8 @@ icns_uint32_t icns_get_element_order(icns_type_t iconType)
 		return 2;
 	case ICNS_16x12_1BIT_DATA:
 		return 1;
+	case ICNS_TABLE_OF_CONTENTS:
+		return 0;
 	default:
 		return 1000;
 	}
@@ -101,11 +105,17 @@ icns_type_t icns_get_mask_type_for_icon_type(icns_type_t iconType)
 {
 	switch(iconType)
 	{
+	// Obviously the TOC type has no mask
+	case ICNS_TABLE_OF_CONTENTS:
+		return ICNS_NULL_MASK;
+
 	// Obviously the version type has no mask
 	case ICNS_ICON_VERSION:
 		return ICNS_NULL_MASK;
 		
 	// 32-bit image types > 256x256 - no mask (mask is already in image)
+	case ICNS_1024x1024_32BIT_ARGB_DATA:
+		return ICNS_NULL_MASK;
 	case ICNS_512x512_32BIT_ARGB_DATA:
 		return ICNS_NULL_MASK;			
 	case ICNS_256x256_32BIT_ARGB_DATA:
@@ -182,6 +192,16 @@ icns_icon_info_t icns_get_image_info_for_type(icns_type_t iconType)
 	
 	switch(iconType)
 	{
+	// TOC type
+	case ICNS_TABLE_OF_CONTENTS:
+		iconInfo.isImage = 0;
+		iconInfo.isMask = 0;
+		iconInfo.iconWidth = 0;
+		iconInfo.iconHeight = 0;
+		iconInfo.iconChannels = 0;
+		iconInfo.iconPixelDepth = 0;
+		iconInfo.iconBitDepth = 0;
+		break;
 	// Version type
 	case ICNS_ICON_VERSION:
 		iconInfo.isImage = 0;
@@ -191,7 +211,17 @@ icns_icon_info_t icns_get_image_info_for_type(icns_type_t iconType)
 		iconInfo.iconChannels = 0;
 		iconInfo.iconPixelDepth = 0;
 		iconInfo.iconBitDepth = 0;
+		break;
 	// 32-bit image types
+	case ICNS_1024x1024_32BIT_ARGB_DATA:
+		iconInfo.isImage = 1;
+		iconInfo.isMask = 0;
+		iconInfo.iconWidth = 1024;
+		iconInfo.iconHeight = 1024;
+		iconInfo.iconChannels = 4;
+		iconInfo.iconPixelDepth = 8;
+		iconInfo.iconBitDepth = 32;
+		break;
 	case ICNS_512x512_32BIT_ARGB_DATA:
 		iconInfo.isImage = 1;
 		iconInfo.isMask = 0;
@@ -590,6 +620,9 @@ icns_type_t	icns_get_type_from_image_info(icns_icon_info_t iconInfo)
 		break;
 	case 512:
 		return ICNS_512x512_32BIT_ARGB_DATA;
+		break;
+	case 1024:
+		return ICNS_1024x1024_32BIT_ARGB_DATA;
 		break;
 		
 	}

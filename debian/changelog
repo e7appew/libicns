@@ -1,3 +1,31 @@
+libicns (0.8.1-1) unstable; urgency=low
+
+  [ Mathew Eis ]
+  * New upstream release
+    - No longer crashes on ARM/SPARC (Closes: #612698)
+    - Understands 'odrp' type (Closes: #614031)
+    - Fails with non-zero return code (Closes: #614028)
+    - Fixes FTBFS with newer libpng (Closes: #635952)
+  * debian/control
+    - Bump to 3.9.3 Standards-Version (no change needed).
+
+  [ Paul Wise ]
+  * Include changes from Debian NMU
+  * Wrap and sort various files using wrap-and-sort -s
+  * Compile against libjpeg-dev instead of the old version (Closes: #643316)
+  * Compile against libpng-dev instead of the old version (Closes: #662403)
+  * Adjust the watch file to only look for release versions
+  * Switch to debhelper compat 9 and dh tiny rules
+  * Drop autotools_dev and use dh-autoreconf
+  * Switch to dpkg-source v3
+  * Use multi-arch paths and fields
+  * Add myself to uploaders
+  * Add Vcs-* headers
+  * Also install the API docs, drop from lib package
+  * Switch to Debian copyright format 1.0 for the source Debian copyright file
+
+ -- Paul Wise <pabs@debian.org>  Thu, 14 Jun 2012 10:16:49 +0800
+
 libicns (0.7.1-1.1) unstable; urgency=low
 
   * Non-maintainer upload.

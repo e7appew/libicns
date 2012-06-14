@@ -1,6 +1,6 @@
 /*
 File:       icns.h
-Copyright (C) 2001-2008 Mathew Eis <mathew@eisbox.net>
+Copyright (C) 2001-2012 Mathew Eis <mathew@eisbox.net>
 Copyright (C) 2002 Chenxiao Zhao <chenxiao.zhao@gmail.com>
 
 With the exception of the limited portions mentiond, this library
@@ -38,7 +38,7 @@ Boston, MA 02110-1301, USA.
 // Enable debugging messages?
 // #define	ICNS_DEBUG	1
 
-// Enable supprt for 256x256 and 512x512 icons
+// Enable supprt for 256x256, 512x512 and 1024x1024 icons
 // Use either Jasper or OpenJPEG, but not both
 // #define	ICNS_JASPER
 // #define	ICNS_OPENJPEG
@@ -127,13 +127,32 @@ static inline icns_argb_t ICNS_RGBA_TO_ARGB(icns_rgba_t pxin) {
 }
 
 /*
-These macros will will on systems that support unaligned
-accesses, as well as those that don't support it
+These macros will work on systems that support unaligned
+accesses, as well as those that don't support it.
+Unfortunately, gcc doesn't support unaligned access well
+with memcpy on some architectures due to a combination of
+memcpy being inlined during the optimization process and
+memory alignment. So, we try to work around this here.
 */
 
-#define ICNS_READ_UNALIGNED(val, addr, size)        memcpy(&(val), (addr), size)
-#define ICNS_WRITE_UNALIGNED(addr, val, size)       memcpy((addr), &(val), size)
+// If the autotools didn't tell us, try and make a good guess
+#ifndef HAVE_UNALIGNED_MEMCPY
+ #if defined(__GNUC__) && (defined(__arm__) || defined(__thumb__) || defined(__sparc__))
+  #define HAVE_UNALIGNED_MEMCPY 0
+ #else
+  #define HAVE_UNALIGNED_MEMCPY 1
+ #endif
+#endif
 
+// Set up the macros
+#if HAVE_UNALIGNED_MEMCPY == 0
+ __attribute__ ((noinline)) void *icns_memcpy( void *dst, const void *src, size_t num );
+ #define ICNS_READ_UNALIGNED(val, addr, size)        icns_memcpy(&(val), (addr), size)
+ #define ICNS_WRITE_UNALIGNED(addr, val, size)       icns_memcpy((addr), &(val), size)
+#else
+ #define ICNS_READ_UNALIGNED(val, addr, size)        memcpy(&(val), (addr), size)
+ #define ICNS_WRITE_UNALIGNED(addr, val, size)       memcpy((addr), &(val), size)
+#endif
 
 /* global variables */
 extern icns_bool_t gShouldPrintErrors;
@@ -158,6 +177,9 @@ icns_bool_t icns_rsrc_header_check(icns_size_t dataSize,icns_byte_t *dataPtr,icn
 icns_bool_t icns_macbinary_header_check(icns_size_t dataSize,icns_byte_t *dataPtr);
 icns_bool_t icns_apple_encoded_header_check(icns_size_t dataSize,icns_byte_t *dataPtr);
 
+// icns_png.c
+int icns_image_to_png(icns_image_t *image, icns_size_t *dataSizeOut, icns_byte_t **dataPtrOut);
+int icns_png_to_image(icns_size_t dataSize, icns_byte_t *dataPtr, icns_image_t *imageOut);
 
 // icns_jp2.c
 #ifdef ICNS_JASPER

@@ -1,14 +1,34 @@
 Source: libicns
 Priority: optional
 Maintainer: Mathew Eis <mathew@eisbox.net>
-Build-Depends: debhelper (>= 6), autotools-dev, libpng12-dev, libjasper-dev, libjpeg62-dev
-Standards-Version: 3.8.3
+Uploaders: Paul Wise <pabs@debian.org>
+Build-Depends:
+ debhelper (>= 9),
+ dh-autoreconf,
+ libjasper-dev,
+ libjpeg-dev,
+ libpng-dev
+Standards-Version: 3.9.3
 Section: libs
 Homepage: http://icns.sourceforge.net/
+Vcs-Svn: http://icns.svn.sourceforge.net/svnroot/icns
+Vcs-Browser: http://icns.svn.sourceforge.net/
+
+Package: libicns1
+Architecture: any
+Multi-Arch: same
+Pre-Depends: ${misc:Pre-Depends}
+Depends: ${misc:Depends}, ${shlibs:Depends}
+Description: library for manipulation of the Mac OS icns format
+ libicns is a library for manipulation of the Mac OS icns resource
+ format, also known as the IconFamily resource type. It can read
+ and write files for the Mac OS X icns format, as well as read from
+ Mac OS resource files and macbinary encoded Mac OS resource forks.
 
 Package: libicns-dev
 Section: libdevel
 Architecture: any
+Multi-Arch: same
 Depends: libicns1 (= ${binary:Version}), ${misc:Depends}
 Description: libicns development files
  libicns is a library for manipulation of
@@ -20,21 +40,12 @@ Description: libicns development files
  This package contains development files (static libraries and headers)
  needed to build software using libicns.
 
-Package: libicns1
-Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
-Description: library for manipulation of the Mac OS icns format
- libicns is a library for manipulation of the Mac OS icns resource
- format, also known as the IconFamily resource type. It can read
- and write files for the Mac OS X icns format, as well as read from
- Mac OS resource files and macbinary encoded Mac OS resource forks.
- 
 Package: icnsutils
-Section: graphics
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
+Multi-Arch: foreign
+Depends: ${misc:Depends}, ${shlibs:Depends}
 Description: utilities for manipulating Mac OS icns files
  icnsutils includes icns2png and png2icns, two utilies used to
  extract PNG images from icns files, and create icns files from
  PNG images.
-
+Section: graphics
