@@ -1,3 +1,9 @@
+libicns (0.8.1-2) unstable; urgency=medium
+
+  * Switch from Jasper to OpenJPEG (Closes: #818202)
+
+ -- Paul Wise <pabs@debian.org>  Tue, 24 May 2016 15:34:47 +0800
+
 libicns (0.8.1-1) unstable; urgency=low
 
   [ Mathew Eis ]
