@@ -7,7 +7,8 @@ Build-Depends:
  dh-autoreconf,
  libopenjp2-7-dev,
  libjpeg-dev,
- libpng-dev
+ libpng-dev,
+ pkg-config
 Standards-Version: 3.9.6
 Section: libs
 Homepage: http://icns.sourceforge.net/
