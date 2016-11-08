@@ -1,6 +1,6 @@
 /*
 File:       icns_element.c
-Copyright (C) 2001-2008 Mathew Eis <mathew@eisbox.net>
+Copyright (C) 2001-2012 Mathew Eis <mathew@eisbox.net>
               2007 Thomas Lübking <thomas.luebking@web.de>
               2002 Chenxiao Zhao <chenxiao.zhao@gmail.com>
 
@@ -186,7 +186,7 @@ int icns_set_element_in_family(icns_family_t **iconFamilyRef,icns_element_t *new
 	#ifdef ICNS_DEBUG
 	{
 		char typeStr[5];
-		printf("  family type '%s'\n",icns_type_str(iconFamilyType,typeStr);
+		printf("  family type '%s'\n",icns_type_str(iconFamilyType,typeStr));
 		printf("  family size: %d (0x%08X)\n",(int)iconFamilySize,iconFamilySize);
 	}
 	#endif
@@ -564,6 +564,7 @@ int icns_update_element_with_image_or_mask(icns_image_t *imageIn,icns_bool_t isM
 	
 	switch(iconType)
 	{
+	case ICNS_1024x1024_32BIT_ARGB_DATA:
 	case ICNS_256x256_32BIT_ARGB_DATA:
 	case ICNS_512x512_32BIT_ARGB_DATA:
 		error = icns_image_to_jp2(imageIn,&newDataSize,&newDataPtr);

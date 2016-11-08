@@ -1,6 +1,6 @@
 /*
 File:       icns_io.c
-Copyright (C) 2001-2008 Mathew Eis <mathew@eisbox.net>
+Copyright (C) 2001-2012 Mathew Eis <mathew@eisbox.net>
               2007 Thomas Lübking <thomas.luebking@web.de>
               2002 Chenxiao Zhao <chenxiao.zhao@gmail.com>
 
@@ -27,6 +27,13 @@ Boston, MA 02110-1301, USA.
 
 #include "icns.h"
 #include "icns_internals.h"
+
+/***************************** ICNS_MEMCPY **************************/
+#if HAVE_UNALIGNED_MEMCPY == 0
+__attribute__ ((noinline)) void *icns_memcpy( void *dst, const void *src, size_t num ) {
+ return memcpy(dst,src,num);
+}
+#endif
 
 /***************************** ICNS_READ_UNALIGNED_BE **************************/
 /* NOTE: only accessible to icns_io.c */
@@ -626,7 +633,7 @@ int icns_export_family_data(icns_family_t *iconFamily,icns_size_t *dataSizeOut,i
 			}
 			#endif
 			
-			if(dataOffset+elementSize > dataSize)
+			if( (elementSize < 8) || (dataOffset+elementSize > dataSize) )
 			{
 				icns_print_err("icns_export_family_data: Invalid element size! (%d)\n",elementSize);
 				error = ICNS_STATUS_INVALID_DATA;
@@ -790,7 +797,7 @@ int icns_parse_family_data(icns_size_t dataSize,icns_byte_t *dataPtr,icns_family
 			}
 			#endif
 			
-			if(dataOffset+elementSize > resourceSize)
+			if( (elementSize < 8) || (dataOffset+elementSize > resourceSize) )
 			{
 				icns_print_err("icns_parse_family_data: Invalid element size! (%d)\n",elementSize);
 				error = ICNS_STATUS_INVALID_DATA;
@@ -1079,10 +1086,8 @@ int icns_read_macbinary_resource_fork(icns_size_t dataSize,icns_byte_t *dataPtr,
 	icns_bool_t	isValid = 0;
 	icns_sint16_t	secondHeaderLength = 0;
 	icns_sint32_t   fileDataPadding = 0;
-	icns_sint32_t   resourceDataPadding = 0;
 	icns_sint32_t   fileDataSize = 0;
 	icns_sint32_t   resourceDataSize = 0;
-	icns_sint32_t   fileDataStart = 0;
 	icns_sint32_t   resourceDataStart = 0;
 	icns_byte_t	*resourceDataPtr = NULL;
 	
@@ -1175,10 +1180,8 @@ int icns_read_macbinary_resource_fork(icns_size_t dataSize,icns_byte_t *dataPtr,
 	
 	// Calculate extra padding length for forks
 	fileDataPadding = (((fileDataSize + 127) >> 7) << 7) - fileDataSize;
-	resourceDataPadding = (((resourceDataSize + 127) >> 7) << 7) - resourceDataSize;
 	
 	// Calculate starting offsets for data
-	fileDataStart = 128;
 	resourceDataStart = fileDataSize + fileDataPadding + 128;
 	
 	// Check that we are not reading invalid memory
@@ -1429,10 +1432,8 @@ icns_bool_t icns_macbinary_header_check(icns_size_t dataSize,icns_byte_t *dataPt
 	icns_type_t	dataCreator = ICNS_NULL_TYPE;
 	icns_sint16_t	secondHeaderLength = 0;
 	icns_sint32_t   fileDataPadding = 0;
-	icns_sint32_t   resourceDataPadding = 0;
 	icns_sint32_t   fileDataSize = 0;
 	icns_sint32_t   resourceDataSize = 0;
-	icns_sint32_t   fileDataStart = 0;
 	icns_sint32_t   resourceDataStart = 0;
 	
 	if(dataPtr == NULL)
@@ -1475,9 +1476,7 @@ icns_bool_t icns_macbinary_header_check(icns_size_t dataSize,icns_byte_t *dataPt
 	ICNS_READ_UNALIGNED_BE(resourceDataSize, (dataPtr+87),sizeof( icns_sint32_t));
 	
 	fileDataPadding = (((fileDataSize + 127) >> 7) << 7) - fileDataSize;
-	resourceDataPadding = (((resourceDataSize + 127) >> 7) << 7) - resourceDataSize;
 	
-	fileDataStart = 128;
 	resourceDataStart = fileDataSize + fileDataPadding + 128;
 	
 	if( (resourceDataStart < 128) || (resourceDataStart > dataSize) )

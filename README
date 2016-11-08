@@ -1,21 +1,26 @@
 ===============================================================================
-README for libicns 0.7.1 - September 3rd, 2009
-Copyright (C) 2001-2009 Mathew Eis <mathew@eisbox.net>
+README for libicns 0.8.1 - June 14, 2012
+Copyright (C) 2001-2012 Mathew Eis <mathew@eisbox.net>
 
+Other individuals have supported the development of libicns; they are credited
+in the source files where their respective contibutions have been made.
+
+===============================================================================
 This library is free software; you can redistribute it and/or
-modify it under the terms of the GNU Library General Public
+modify it under the terms of the GNU Lesser General Public
 License as published by the Free Software Foundation; either
-version 2 of the License, or (at your option) any later version.
+version 2.1 of the License, or (at your option) any later version.
 
 This library is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-Library General Public License for more details.
+Lesser General Public License for more details.
 
-You should have received a copy of the GNU Library General Public
+You should have received a copy of the GNU Lesser General Public
 License along with this library; if not, write to the
-Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-Boston, MA 02111-1307, USA.
+Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+Boston, MA 02110-1301, USA.
+
 ===============================================================================
 This package include the following libraries and utilities:
 1) libicns - A library for the translation of the icns format
@@ -28,42 +33,33 @@ You should be able to get the latest version at http://sf.net/projects/icns
 libicns is a library for manipulation of the Mac OS icns resource format, also
 known as the IconFamily resource type. It can read and write files from the
 Mac OS X icns format, as well as read from Mac OS resource files and macbinary
-encoded Mac OS resource forks. As of release 0.5.9, it can fully manipulate
-any 128x128 and smaller 32-bit icons, and has partial support for manipulating
-8-bit, 4-bit, and 1-bit icons. When linked with Jasper, it also has full
-support for 256x256 and 512x512 icons within the icon family.
+encoded Mac OS resource forks.
+
+As of release 0.5.9, it can fully manipulate any 128x128 and smaller 32-bit
+icons, and has partial support for manipulating 8-bit, 4-bit, and 1-bit icons.
+
+When linked with Jasper, it also has full support for 256x256 and 512x512
+icon sizes within the icon family.
+
+As of release 0.8.0, it can read the PNG format introduced with OS X Lion 10.7
+
 
 Please see DEVNOTES for more information on how to use libicns
 
 ===============================================================================
-Building libicns
-
-You will need a copy of zlib, and libpng. Additionally, you will need a copy
-of either libjasper or libopenjpeg. If you do not want to install those
-libraries, you will need to build them, then modify the Makefile to build
-against the static libraries in thier respective directories.
-
-For a complete build of libicns and icns2png, you should check the Makefile
-to ensure you are building against the correct libraries, then run
-make
-make install
-
-Please see the Makefile for alternative possibilities
-
-===============================================================================
 Using icns2png
 
-./icns2png -x OmniWeb.icns
+icns2png -x OmniWeb.icns
 Converting OmniWeb.icns to OmniWeb_128x128x32.png...
 
 This will result in a file OmniWeb_128x128x32.png with a 128x128 icon from OmniWeb.icns.
 
-Run ./icns2png --help for more detailed information.
+Run icns2png --help for more detailed information.
 
 ===============================================================================
 Using icontainer2icns
 
-./icontainer2icns foo.icontainer
+icontainer2icns foo.icontainer
 
 This will end up with a couple of icns files identified by the iContainer ID
 and the iContainer name in a (new) folder carrying the icontainer name
@@ -120,11 +116,3 @@ following icon data (Although most icons to not have a complete set):
 32x32 pixels - 1 or 8 bit mask - 1, 4, 8, or 24 bit icon
 64x64 pixels - 1 or 8 bit mask - 1, 4, 8, or 24 bit icon
 128x128 pixels - 8 bit mask - 24 bit icon
-
-===============================================================================
-Requirements
-
-libicns should build just about any *nux distribution The source is cross
-platform and has been tested on PowerPC Linux, x86 Linux, and Mac OS X (UNIX)
-
-===============================================================================

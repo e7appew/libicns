@@ -1,6 +1,6 @@
 /*
 File:       icns_image.c
-Copyright (C) 2001-2008 Mathew Eis <mathew@eisbox.net>
+Copyright (C) 2001-2012 Mathew Eis <mathew@eisbox.net>
               2007 Thomas Lübking <thomas.luebking@web.de>
               2002 Chenxiao Zhao <chenxiao.zhao@gmail.com>
 
@@ -99,7 +99,7 @@ int icns_get_image32_with_mask_from_family(icns_family_t *iconFamily,icns_type_t
 	}
 	
 	// We used the jp2 processor for these two, so we're done!
-	if( (iconType == ICNS_256x256_32BIT_ARGB_DATA) || (iconType == ICNS_512x512_32BIT_ARGB_DATA) ) {
+	if( (iconType == ICNS_256x256_32BIT_ARGB_DATA) || (iconType == ICNS_512x512_32BIT_ARGB_DATA) || (iconType == ICNS_1024x1024_32BIT_ARGB_DATA) ) {
 		memcpy(imageOut,&iconImage,sizeof(icns_image_t));
 		if(iconElement != NULL) {
 		free(iconElement);
@@ -161,13 +161,11 @@ int icns_get_image32_with_mask_from_family(icns_family_t *iconFamily,icns_type_t
 		icns_byte_t	*oldData = NULL;
 		icns_byte_t	*newData = NULL;
 		icns_uint32_t	oldBitDepth = 0;
-		icns_uint32_t	oldDataSize = 0;
 		unsigned long	newBlockSize = 0;
 		unsigned long	newDataSize = 0;
 		icns_colormap_rgb_t	colorRGB;
 		
 		oldBitDepth = (iconImage.imagePixelDepth * iconImage.imageChannels);
-		oldDataSize = iconImage.imageDataSize;
 		
 		pixelCount = iconImage.imageWidth * iconImage.imageHeight;
 		
@@ -372,7 +370,6 @@ int icns_get_image_from_element(icns_element_t *iconElement,icns_image_t *imageO
 	unsigned long	rawDataSize = 0;
 	icns_byte_t	*rawDataPtr = NULL;
 	icns_uint32_t	iconBitDepth = 0;
-	unsigned long	iconDataSize = 0;
 	unsigned long	iconDataRowSize = 0;
 	
 	if(iconElement == NULL)
@@ -418,9 +415,23 @@ int icns_get_image_from_element(icns_element_t *iconElement,icns_image_t *imageO
 		// 32-Bit Icon Image Data Types ( > 256px )
 		case ICNS_256x256_32BIT_ARGB_DATA:
 		case ICNS_512x512_32BIT_ARGB_DATA:
-			// We need to use a jp2 processor for these two types
-			error = icns_jp2_to_image((int)rawDataSize, (icns_byte_t *)rawDataPtr, imageOut);
-			return error;
+		case ICNS_1024x1024_32BIT_ARGB_DATA:
+			{
+				uint8_t magicPNG[] = {0x89,0x50,0x4E,0x47,0x0D,0x0A,0x1A,0x0A};
+				uint8_t magicByt[] = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00}; 
+			
+				ICNS_READ_UNALIGNED(magicByt[0], rawDataPtr, 8);
+				
+				// 256x256+ sizes may or may not be PNG dta as of 10.7 Lion, so check
+				if(memcmp(&magicByt[0], &magicPNG[0], 8) == 0) {
+					// We know to use the PNG processor
+					error = icns_png_to_image((int)rawDataSize, (icns_byte_t *)rawDataPtr, imageOut);
+				} else {
+					// We assume use of the jp2 processor
+					error = icns_jp2_to_image((int)rawDataSize, (icns_byte_t *)rawDataPtr, imageOut);
+				}
+				return error;
+			}
 		case ICNS_128X128_32BIT_DATA:
 		case ICNS_48x48_32BIT_DATA:
 		case ICNS_32x32_32BIT_DATA:
@@ -435,7 +446,6 @@ int icns_get_image_from_element(icns_element_t *iconElement,icns_image_t *imageO
 			}
 			
 			iconBitDepth = imageOut->imagePixelDepth * imageOut->imageChannels;
-			iconDataSize = imageOut->imageDataSize;
 			iconDataRowSize = imageOut->imageWidth * iconBitDepth / ICNS_BYTE_BITS;
 			
 			if(rawDataSize < imageOut->imageDataSize)
@@ -501,7 +511,6 @@ int icns_get_image_from_element(icns_element_t *iconElement,icns_image_t *imageO
 			}
 			
 			iconBitDepth = imageOut->imagePixelDepth * imageOut->imageChannels;
-			iconDataSize = imageOut->imageDataSize;
 			iconDataRowSize = imageOut->imageWidth * iconBitDepth / ICNS_BYTE_BITS;
 			
 			for(dataCount = 0; dataCount < imageOut->imageHeight; dataCount++)

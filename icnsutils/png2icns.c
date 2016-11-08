@@ -2,7 +2,7 @@
  * png2icns
  *
  * Copyright (C) 2008 Julien BLACHE <jb@jblache.org>
- * Copyright (C) 2008 Mathew Eis <mathew@eisbox.net>
+ * Copyright (C) 2012 Mathew Eis <mathew@eisbox.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,6 +30,10 @@
 
 #define	FALSE	0
 #define	TRUE	1
+
+#if PNG_LIBPNG_VER >= 10209
+ #define PNG2ICNS_EXPAND_GRAY 1
+#endif
 
 static int read_png(FILE *fp, png_bytepp buffer, int32_t *bpp, int32_t *width, int32_t *height)
 {
@@ -70,7 +74,11 @@ static int read_png(FILE *fp, png_bytepp buffer, int32_t *bpp, int32_t *width, i
 	switch (color_type)
 	{
 		case PNG_COLOR_TYPE_GRAY:
+			#ifdef PNG2ICNS_EXPAND_GRAY
+			png_set_expand_gray_1_2_4_to_8(png_ptr);
+			#else
 			png_set_gray_1_2_4_to_8(png_ptr);
+			#endif
 
 			if (bit_depth == 16) {
 				png_set_strip_16(png_ptr);
@@ -82,7 +90,11 @@ static int read_png(FILE *fp, png_bytepp buffer, int32_t *bpp, int32_t *width, i
 			break;
 
 		case PNG_COLOR_TYPE_GRAY_ALPHA:
+			#ifdef PNG2ICNS_EXPAND_GRAY
+			png_set_expand_gray_1_2_4_to_8(png_ptr);
+			#else
 			png_set_gray_1_2_4_to_8(png_ptr);
+			#endif
 
 			if (bit_depth == 16) {
 				png_set_strip_16(png_ptr);
@@ -231,7 +243,7 @@ static int add_png_to_family(icns_family_t **iconFamily, char *pngname)
 	
 	icns_set_print_errors(1);
 	
-	if( (iconType != ICNS_512x512_32BIT_ARGB_DATA) && (iconType != ICNS_256x256_32BIT_ARGB_DATA) )
+	if( (iconType != ICNS_1024x1024_32BIT_ARGB_DATA) && (iconType != ICNS_512x512_32BIT_ARGB_DATA) && (iconType != ICNS_256x256_32BIT_ARGB_DATA) )
 	{
 		printf("Using icns type '%s', mask '%s' for '%s'\n", iconStr, maskStr, pngname);
 	}
@@ -251,7 +263,7 @@ static int add_png_to_family(icns_family_t **iconFamily, char *pngname)
 		free(iconElement);
 	}
 
-	if( (iconType != ICNS_512x512_32BIT_ARGB_DATA) && (iconType != ICNS_256x256_32BIT_ARGB_DATA) )
+	if( (iconType != ICNS_1024x1024_32BIT_ARGB_DATA) && (iconType != ICNS_512x512_32BIT_ARGB_DATA) && (iconType != ICNS_256x256_32BIT_ARGB_DATA) )
 	{
 		icns_init_image_for_type(maskType, &icnsMask);
 
