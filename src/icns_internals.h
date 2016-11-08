@@ -5,16 +5,16 @@ Copyright (C) 2002 Chenxiao Zhao <chenxiao.zhao@gmail.com>
 
 With the exception of the limited portions mentiond, this library
 is free software; you can redistribute it and/or modify it under
-the terms of the GNU Library General Public License as published
-by the Free Software Foundation; either version 2 of the License,
+the terms of the GNU Lesser General Public License as published
+by the Free Software Foundation; either version 2.1 of the License,
 or (at your option) any later version.
 
 This library is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-Library General Public License for more details.
+Lesser General Public License for more details.
 
-You should have received a copy of the GNU Library General Public
+You should have received a copy of the GNU Lesser General Public
 License along with this library; if not, write to the
 Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, 
 Boston, MA 02110-1301, USA.
@@ -88,15 +88,26 @@ typedef struct icns_rgb_t
 
 /* icns constants */
 
-#define			ICNS_BYTE_BITS	8
+
+typedef enum icns_rsrc_endian_t
+{
+	ICNS_BE_RSRC = 0,
+	ICNS_LE_RSRC = 1
+} icns_rsrc_endian_t;
+
+#define	ICNS_BYTE_BITS	                  8
+
+#define ICNS_APPLE_SINGLE_MAGIC           0x00051600
+#define	ICNS_APPLE_DOUBLE_MAGIC           0x00051607
+
+#define	ICNS_APPLE_ENC_DATA               1
+#define	ICNS_APPLE_ENC_RSRC               2
 
 /* icns macros */
 
 /*
 These functions swap the position of the alpha channel
 */
-
-
 static inline icns_rgba_t ICNS_ARGB_TO_RGBA(icns_argb_t pxin) {
 	icns_rgba_t pxout;
 	pxout.r = pxin.r;
@@ -125,7 +136,7 @@ accesses, as well as those that don't support it
 
 
 /* global variables */
-icns_bool_t gShouldPrintErrors;
+extern icns_bool_t gShouldPrintErrors;
 
 /* icns function prototypes */
 
@@ -139,11 +150,14 @@ int icns_update_element_with_image_or_mask(icns_image_t *imageIn,icns_bool_t isM
 
 // icns_io.c
 int icns_parse_family_data(icns_size_t dataSize,icns_byte_t *data,icns_family_t **iconFamilyOut);
-int icns_find_family_in_mac_resource(icns_size_t resDataSize, icns_byte_t *resData, icns_family_t **dataOut);
+int icns_find_family_in_mac_resource(icns_size_t resDataSize, icns_byte_t *resData, icns_rsrc_endian_t fileEndian, icns_family_t **dataOut);
 int icns_read_macbinary_resource_fork(icns_size_t dataSize,icns_byte_t *dataPtr,icns_type_t *dataTypeOut, icns_type_t *dataCreatorOut,icns_size_t *parsedResSizeOut,icns_byte_t **parsedResDataOut);
+int icns_read_apple_encoded_resource_fork(icns_size_t dataSize,icns_byte_t *dataPtr,icns_type_t *dataTypeOut, icns_type_t *dataCreatorOut,icns_size_t *parsedResSizeOut,icns_byte_t **parsedResDataOut);
 icns_bool_t icns_icns_header_check(icns_size_t dataSize,icns_byte_t *dataPtr);
-icns_bool_t icns_rsrc_header_check(icns_size_t dataSize,icns_byte_t *dataPtr);
+icns_bool_t icns_rsrc_header_check(icns_size_t dataSize,icns_byte_t *dataPtr,icns_rsrc_endian_t fileEndian);
 icns_bool_t icns_macbinary_header_check(icns_size_t dataSize,icns_byte_t *dataPtr);
+icns_bool_t icns_apple_encoded_header_check(icns_size_t dataSize,icns_byte_t *dataPtr);
+
 
 // icns_jp2.c
 #ifdef ICNS_JASPER
@@ -152,17 +166,20 @@ int icns_jas_image_to_jp2(icns_image_t *image, icns_size_t *dataSizeOut, icns_by
 #endif
 #ifdef ICNS_OPENJPEG
 int icns_opj_jp2_to_image(icns_size_t dataSize, icns_byte_t *dataPtr, icns_image_t *imageOut);
-int icns_opj_image_to_jp2(icns_image_t *image, icns_size_t *dataSizeOut, icns_byte_t **dataPtrOut);
-int icns_opj_to_image(opj_image_t *image, icns_image_t *outIcon);
 int icns_opj_jp2_dec(icns_size_t dataSize, icns_byte_t *dataPtr, opj_image_t **imageOut);
+int icns_opj_to_image(opj_image_t *image, icns_image_t *outIcon);
+int icns_opj_image_to_jp2(icns_image_t *image, icns_size_t *dataSizeOut, icns_byte_t **dataPtrOut);
 void icns_opj_error_callback(const char *msg, void *client_data);
 void icns_opj_warning_callback(const char *msg, void *client_data);
 void icns_opj_info_callback(const char *msg, void *client_data);
 #endif
+void icns_place_jp2_cdef(icns_byte_t *dataPtr, icns_size_t dataSize);
 
 // icns_utils.c
+icns_uint32_t icns_get_element_order(icns_type_t iconType);
 void icns_print_err(const char *template, ...);
 
+// Stop hiding symbols
 #pragma GCC visibility pop
 
 #endif /* _ICNS_INTERNALS_H_ */

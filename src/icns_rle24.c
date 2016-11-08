@@ -7,14 +7,14 @@ Copyright (C) 2001-2008 Mathew Eis <mathew@eisbox.net>
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public
 License as published by the Free Software Foundation; either
-version 2 of the License, or (at your option) any later version.
+version 2.1 of the License, or (at your option) any later version.
 
 This library is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-Library General Public License for more details.
+Lesser General Public License for more details.
 
-You should have received a copy of the GNU Library General Public
+You should have received a copy of the GNU Lesser General Public
 License along with this library; if not, write to the
 Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, 
 Boston, MA 02110-1301, USA.
@@ -120,7 +120,6 @@ int icns_decode_rle24_data(icns_size_t rawDataSize, icns_byte_t *rawDataPtr,icns
 			{
 				// Top bit is clear - run of various values to follow
 				runLength = (0xFF & rawDataPtr[dataOffset++]) + 1; // 1 <= len <= 128
-				
 				for(i = 0; (i < runLength) && (pixelOffset < expectedPixelCount) && (dataOffset < rawDataSize); i++) {
 					destIconData[(pixelOffset * 4) + colorOffset] = rawDataPtr[dataOffset++];
 					pixelOffset++;
@@ -130,7 +129,6 @@ int icns_decode_rle24_data(icns_size_t rawDataSize, icns_byte_t *rawDataPtr,icns
 			{
 				// Top bit is set - run of one value to follow
 				runLength = (0xFF & rawDataPtr[dataOffset++]) - 125; // 3 <= len <= 130
-				
 				// Set the value to the color shifted to the correct bit offset
 				colorValue = rawDataPtr[dataOffset++];
 				
@@ -232,8 +230,9 @@ int icns_encode_rle24_data(icns_size_t dataSizeIn, icns_byte_t *dataPtrIn,icns_s
 	// channels, not bytes....
 	dataInChanSize = dataSizeIn / 4;
 	
-	// Move forward 4 bytes - who knows why this should be
-	dataTempCount = 4;
+	// Move forward 4 bytes for 128 size - who knows why this should be
+	if(dataSizeIn >= 65536)
+		dataTempCount = 4;
 	
 	// Data is stored in red run, green run,blue run
 	// So we compress from pixel format RGBA
@@ -243,8 +242,6 @@ int icns_encode_rle24_data(icns_size_t dataSizeIn, icns_byte_t *dataPtrIn,icns_s
 	// ALPHA: byte[3], byte[7], byte[11] do nothing with these bytes
 	for(colorOffset = 0; colorOffset < 3; colorOffset++)
 	{
-		int	dataSum = 0;
-		
 		runCount = 0;
 		
 		// Set the first byte of the run...
@@ -271,7 +268,7 @@ int icns_encode_rle24_data(icns_size_t dataSizeIn, icns_byte_t *dataPtrIn,icns_s
 				// Decide here if the run should be same values or different values
 				
 				// If the last three values were the same, we can change to a same-type run
-				if((dataByte == dataRun[runLength-1])&&(dataByte == dataRun[runLength-2]))
+				if( (dataByte == dataRun[runLength-1]) && (dataByte == dataRun[runLength-2]) )
 					runType = 1;
 				else
 					runType = 0;
@@ -284,17 +281,16 @@ int icns_encode_rle24_data(icns_size_t dataSizeIn, icns_byte_t *dataPtrIn,icns_s
 				{
 					// If the new value matches both of the last two values, we have a new
 					// same-type run starting with the previous two bytes
-					if((dataByte == dataRun[runLength-1])&&(dataByte == dataRun[runLength-2]))
+					if( (dataByte == dataRun[runLength-1]) && (dataByte == dataRun[runLength-2]) )
 					{
 						// Set the RL byte
 						*(dataTemp+dataTempCount) = runLength - 3;
 						dataTempCount++;
+						
 						// Copy 0 to runLength-2 bytes to the RLE data here
 						memcpy( dataTemp+dataTempCount , dataRun , runLength - 2 );
 						dataTempCount = dataTempCount + (runLength - 2);
 						runCount++;
-						
-						dataSum += (runLength - 2);
 						
 						// Set up the new same-type run
 						dataRun[0] = dataRun[runLength-2];
@@ -312,7 +308,7 @@ int icns_encode_rle24_data(icns_size_t dataSizeIn, icns_byte_t *dataPtrIn,icns_s
 				{
 					// If the new value matches both of the last two values, we
 					// can safely continue
-					if((dataByte == dataRun[runLength-1])&&(dataByte == dataRun[runLength-2]))
+					if( (dataByte == dataRun[runLength-1]) && (dataByte == dataRun[runLength-2]) )
 					{
 						dataRun[runLength++] = dataByte;
 					}
@@ -327,8 +323,6 @@ int icns_encode_rle24_data(icns_size_t dataSizeIn, icns_byte_t *dataPtrIn,icns_s
 						dataTempCount++;
 						runCount++;
 						
-						dataSum += 2;
-						
 						// Copy 0 to runLength bytes to the RLE data here
 						dataRun[0] = dataByte;
 						runLength = 1;
@@ -341,12 +335,11 @@ int icns_encode_rle24_data(icns_size_t dataSizeIn, icns_byte_t *dataPtrIn,icns_s
 					{
 						// Set the RL byte low
 						*(dataTemp+dataTempCount) = runLength - 1;
+						dataTempCount++;
 						
 						// Copy 0 to runLength bytes to the RLE data here
 						memcpy( dataTemp+dataTempCount , dataRun , runLength );
 						dataTempCount = dataTempCount + runLength;
-						
-						dataSum += runLength;
 					}
 					else if(runType == 1)
 					{
@@ -357,8 +350,6 @@ int icns_encode_rle24_data(icns_size_t dataSizeIn, icns_byte_t *dataPtrIn,icns_s
 						// Only copy the first byte, since all the remaining values are identical
 						*(dataTemp+dataTempCount) = dataRun[0];
 						dataTempCount++;
-						
-						dataSum += 2;
 					}
 					
 					runCount++;
@@ -378,12 +369,11 @@ int icns_encode_rle24_data(icns_size_t dataSizeIn, icns_byte_t *dataPtrIn,icns_s
 			{
 				// Set the RL byte low
 				*(dataTemp+dataTempCount) = runLength - 1;
+				dataTempCount++;
 				
 				// Copy 0 to runLength bytes to the RLE data here
 				memcpy( dataTemp+dataTempCount , dataRun , runLength );
 				dataTempCount = dataTempCount + runLength;
-				
-				dataSum += runLength;
 			}
 			else if(runType == 1)
 			{
@@ -394,8 +384,6 @@ int icns_encode_rle24_data(icns_size_t dataSizeIn, icns_byte_t *dataPtrIn,icns_s
 				// Only copy the first byte, since all the remaining values are identical
 				*(dataTemp+dataTempCount) = dataRun[0];
 				dataTempCount++;
-				
-				dataSum += 2;
 			}
 			
 			runCount++;

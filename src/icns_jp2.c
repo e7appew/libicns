@@ -7,14 +7,14 @@ Copyright (C) 2001-2008 Mathew Eis <mathew@eisbox.net>
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public
 License as published by the Free Software Foundation; either
-version 2 of the License, or (at your option) any later version.
+version 2.1 of the License, or (at your option) any later version.
 
 This library is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-Library General Public License for more details.
+Lesser General Public License for more details.
 
-You should have received a copy of the GNU Library General Public
+You should have received a copy of the GNU Lesser General Public
 License along with this library; if not, write to the
 Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, 
 Boston, MA 02110-1301, USA.
@@ -127,7 +127,11 @@ int icns_image_to_jp2(icns_image_t *image, icns_size_t *dataSizeOut, icns_byte_t
 		error = icns_jas_image_to_jp2(image, dataSizeOut, dataPtrOut);	
 	#else
 	#ifdef ICNS_OPENJPEG
-		error = icns_opj_image_to_jp2(image, dataSizeOut, dataPtrOut);	
+		// OpenJPEG is broken for RGB+A images for now. See a possible patch here:
+		// http://groups.google.com/group/openjpeg/browse_thread/thread/1cb7807b2053592e
+		// error = icns_opj_image_to_jp2(image, dataSizeOut, dataPtrOut);
+		icns_print_err("icns_image_to_jp2: Saving JP2 data with OpenJPEG is not yet supported!\n");
+		error = ICNS_STATUS_UNSUPPORTED;
 	#else
 		*dataPtrOut = NULL;
 		error = ICNS_STATUS_UNSUPPORTED;
@@ -179,7 +183,7 @@ int icns_jas_jp2_to_image(icns_size_t dataSize, icns_byte_t *dataPtr, icns_image
 	// Connect a jasper stream to the memory
 	imagestream = jas_stream_memopen((char*)dataPtr, dataSize);
 	
-	if (imagestream == NULL)
+	if(imagestream == NULL)
 	{
 		icns_print_err("icns_jas_jp2_to_image: Unable to connect to buffer for decoding!\n");
 		return ICNS_STATUS_INVALID_DATA;
@@ -188,7 +192,7 @@ int icns_jas_jp2_to_image(icns_size_t dataSize, icns_byte_t *dataPtr, icns_image
 	// Determine the image format
 	datafmt = jas_image_getfmt(imagestream);
 	
-	if (datafmt < 0)
+	if(datafmt < 0)
 	{
 		icns_print_err("icns_jas_jp2_to_image: Unable to determine jp2 data format! (%d)\n",datafmt);
 		jas_stream_close(imagestream);
@@ -201,7 +205,7 @@ int icns_jas_jp2_to_image(icns_size_t dataSize, icns_byte_t *dataPtr, icns_image
 	// that fails if there are not 3 channels or components (RGB). The
 	// data in icns files is usually RGBA - 4 channels. Thus, the
 	// assert will cause the program to crash.
-	if (!(image = jas_image_decode(imagestream, datafmt, 0)))
+	if(!(image = jas_image_decode(imagestream, datafmt, 0)))
 	{
 		icns_print_err("icns_jas_jp2_to_image: Error while decoding jp2 data stream!\n");
 		return ICNS_STATUS_INVALID_DATA;
@@ -254,7 +258,7 @@ int icns_jas_jp2_to_image(icns_size_t dataSize, icns_byte_t *dataPtr, icns_image
 	for(c = 0; c < 4; c++)
 	{
 		int depth = jas_image_cmptprec(image, c);
-		if (depth > 8) {
+		if(depth > 8) {
 			adjust[c] = depth - 8;
 			#ifdef ICNS_DEBUG
 			printf("BMP CONVERSION: Will be trucating component %d (%d bits) by %d bits to 8 bits.\n",c,depth,adjust[c]);
@@ -266,7 +270,7 @@ int icns_jas_jp2_to_image(icns_size_t dataSize, icns_byte_t *dataPtr, icns_image
 	
 	for (c = 0; c < 4; c++)
 	{
-		if ((bufs[c] = jas_matrix_create(1, imageWidth)) == NULL)
+		if((bufs[c] = jas_matrix_create(1, imageWidth)) == NULL)
 		{
 			icns_print_err("icns_jas_jp2_to_image: Unable to create image matix! (No memory)\n");
 			error = ICNS_STATUS_NO_MEMORY;
@@ -381,11 +385,6 @@ int icns_jas_image_to_jp2(icns_image_t *image, icns_size_t *dataSizeOut, icns_by
 	//			EnumCS = sRGB
 	//		CDEF
 	//	JP2C	- JPEG 2000 Codestream
-	//	So far everything looks OK, except we may have a problem with the CDEF
-	// 	not coming in. If this becomes an issue, see libjasper jp2_enc.c lines 252-301
-
-	width = image->imageWidth;
-	height = image->imageHeight;
 	
 	// Set up the component parameters
 	for (c = 0; c < 4; c++) {
@@ -393,22 +392,22 @@ int icns_jas_image_to_jp2(icns_image_t *image, icns_size_t *dataSizeOut, icns_by
 		cmptparms[c].tly = 0;
 		cmptparms[c].hstep = 1;
 		cmptparms[c].vstep = 1;
-		cmptparms[c].width = width;
-		cmptparms[c].height = height;
-		cmptparms[c].prec = 8;
+		cmptparms[c].width = image->imageWidth;
+		cmptparms[c].height = image->imageHeight;
+		cmptparms[c].prec = image->imagePixelDepth;
 		cmptparms[c].sgnd = false;
 	}
-
+	
 	// Initialize Jasper
 	jas_init();
 	
 	// Allocate a new japser image
-	if (!(jasimage = jas_image_create(4, cmptparms, JAS_CLRSPC_UNKNOWN)))
+	if(!(jasimage = jas_image_create(4, cmptparms, JAS_CLRSPC_UNKNOWN)))
 	{
 		icns_print_err("icns_jas_image_to_jp2: could not allocate new jasper image! (Likely out of memory)\n");
 		return ICNS_STATUS_NO_MEMORY;
 	}
-
+	
 	// Set up the image components
 	jas_image_setclrspc(jasimage, JAS_CLRSPC_SRGB);
 	jas_image_setcmpttype(jasimage, 0, JAS_IMAGE_CT_RGB_R);
@@ -416,10 +415,13 @@ int icns_jas_image_to_jp2(icns_image_t *image, icns_size_t *dataSizeOut, icns_by
 	jas_image_setcmpttype(jasimage, 2, JAS_IMAGE_CT_RGB_B);
 	jas_image_setcmpttype(jasimage, 3, JAS_IMAGE_CT_OPACITY);
 
+	width = image->imageWidth;
+	height = image->imageHeight;
+	
 	// Allocate the matrix buffers
 	for(c = 0; c < 4; c++)
 	{
-		if ((bufs[c] = jas_matrix_create(height, width)) == NULL)
+		if((bufs[c] = jas_matrix_create(height, width)) == NULL)
 		{
 			icns_print_err("icns_jas_image_to_jp2: Unable to create image matix! (No memory)\n");
 			error = ICNS_STATUS_NO_MEMORY;
@@ -459,8 +461,7 @@ int icns_jas_image_to_jp2(icns_image_t *image, icns_size_t *dataSizeOut, icns_by
 	// Create a new in-memory stream - Jasper will allocate and grow this as needed
 	imagestream = jas_stream_memopen( NULL, 0);
 	
-	// Write the image to the stream
-	if (jas_image_encode(jasimage, imagestream, jas_image_strtofmt("jp2"),NULL)) {
+	if(jas_image_encode(jasimage, imagestream, jas_image_strtofmt("jp2"),NULL)) {
 		icns_print_err("icns_jas_image_to_jp2: Unable to encode jp2 data!\n");
 		error = ICNS_STATUS_INVALID_DATA;
 		goto exception;
@@ -468,13 +469,14 @@ int icns_jas_image_to_jp2(icns_image_t *image, icns_size_t *dataSizeOut, icns_by
 	
 	jas_stream_flush(imagestream);
 
-	// Offload the stream to our memory buffers
-	*dataSizeOut = jas_stream_length(imagestream);
+	// Get the size of the stream - add 34 bytes for cdef
+	*dataSizeOut = jas_stream_length(imagestream)+34;
 
 	#ifdef ICNS_DEBUG
 	printf("Compressed jp2 data size is %d\n",*dataSizeOut);
 	#endif
 
+	// Offload the stream to our memory buffers
 	*dataPtrOut = (icns_byte_t *)malloc(*dataSizeOut);
 	if(!(*dataPtrOut))
 	{
@@ -487,6 +489,8 @@ int icns_jas_image_to_jp2(icns_image_t *image, icns_size_t *dataSizeOut, icns_by
 
 	jas_stream_close(imagestream);
 	
+	icns_place_jp2_cdef(*dataPtrOut,*dataSizeOut);
+
 exception:
 	
 	for(c = 0; c < 4; c++) {
@@ -500,7 +504,6 @@ exception:
 		
 	return error;
 }
-
 
 #endif /* ifdef ICNS_JASPER */
 
@@ -544,11 +547,139 @@ int icns_opj_jp2_to_image(icns_size_t dataSize, icns_byte_t *dataPtr, icns_image
 	return error;	
 }
 
-int icns_opj_image_to_jp2(icns_image_t *image, icns_size_t *dataSizeOut, icns_byte_t **dataPtrOut)
+// Decode jp2 data using OpenJPEG
+int icns_opj_jp2_dec(icns_size_t dataSize, icns_byte_t *dataPtr, opj_image_t **imageOut)
 {
-	int error = ICNS_STATUS_OK;
+	opj_event_mgr_t    event_mgr;	
+	opj_dparameters_t  parameters;
+	opj_dinfo_t        *dinfo = NULL;
+	opj_cio_t          *cio = NULL;
+	opj_image_t        *image = NULL;
+
+	memset(&event_mgr, 0, sizeof(opj_event_mgr_t));
+	event_mgr.error_handler = icns_opj_error_callback;
+	event_mgr.warning_handler = icns_opj_warning_callback;
+	event_mgr.info_handler = icns_opj_info_callback;
+
+	opj_set_default_decoder_parameters(&parameters);
+
+	dinfo = opj_create_decompress(CODEC_JP2);
+	opj_set_event_mgr((opj_common_ptr)dinfo, &event_mgr, stderr);
+	opj_setup_decoder(dinfo, &parameters);
+
+	cio = opj_cio_open((opj_common_ptr)dinfo, dataPtr, dataSize);
+
+	image = opj_decode(dinfo, cio);
+	if(!image) {
+		icns_print_err("icns_opj_jp2_dec: failed to decode image!\n");
+		opj_destroy_decompress(dinfo);
+		opj_cio_close(cio);
+		return ICNS_STATUS_INVALID_DATA;
+	} else {
+		*imageOut = image;	
+	}
+
+	opj_cio_close(cio);
+	opj_destroy_decompress(dinfo);
+
+	return ICNS_STATUS_OK;
+}
+
+// Convert from opj_image_t to icns_image_t
+int icns_opj_to_image(opj_image_t *opjImg, icns_image_t *iconImg)
+{
+	int		error = ICNS_STATUS_OK;
+	icns_sint8_t    adjust[4] = {0,0,0,0};
+	icns_byte_t	*dataPtr = NULL;
+	int             c = 0;
+	int             i, j;
+	int             rowOffset, colOffset;
 	
-	if(image == NULL)
+	if(opjImg == NULL)
+	{
+		icns_print_err("icns_opj_to_image: OpenJPEG image is NULL!\n");
+		return ICNS_STATUS_NULL_PARAM;
+	}
+	
+	if(iconImg == NULL)
+	{
+		icns_print_err("icns_opj_to_image: Icon image is NULL!\n");
+		return ICNS_STATUS_NULL_PARAM;
+	}
+	
+	iconImg->imageWidth = opjImg->comps[0].w;
+	iconImg->imageHeight = opjImg->comps[0].h;
+	iconImg->imageChannels = opjImg->numcomps;
+	iconImg->imagePixelDepth = opjImg->comps[0].prec;
+	
+	iconImg->imageDataSize = iconImg->imageHeight * iconImg->imageWidth * iconImg->imagePixelDepth; // * iconChannels ?
+	iconImg->imageData = (icns_byte_t *)malloc(iconImg->imageDataSize);
+	if(!iconImg->imageData) {
+		icns_print_err("icns_create_family: Unable to allocate memory block of size: %d!\n",iconImg->imageDataSize);
+		return ICNS_STATUS_NO_MEMORY;
+	}
+	memset(iconImg->imageData,0,iconImg->imageDataSize);
+	
+	dataPtr = iconImg->imageData;
+	
+	for(c = 0; c < 4; c++)
+	{
+		int depth = opjImg->comps[c].prec;
+		if(depth > 8) {
+			adjust[c] = depth - 8;
+			#ifdef ICNS_DEBUG
+			printf("BMP CONVERSION: Will be trucating component %d (%d bits) by %d bits to 8 bits.\n",c,depth,adjust[c]);
+			#endif
+		} else {
+			adjust[c] = 0;
+		}
+	}
+	
+	for (i = 0; i < iconImg->imageHeight; i++) {
+		rowOffset = i * iconImg->imageChannels * iconImg->imageWidth;
+		for(j = 0; j < iconImg->imageWidth; j++) {
+			icns_rgba_t *dst_pixel;
+			int r, g, b, a;
+			
+			colOffset = j * iconImg->imageChannels;
+						
+			r = opjImg->comps[0].data[i*iconImg->imageWidth+j];
+			r += (opjImg->comps[0].sgnd ? 1 << (opjImg->comps[0].prec - 1) : 0);
+			g = opjImg->comps[1].data[i*iconImg->imageWidth+j];
+			g += (opjImg->comps[1].sgnd ? 1 << (opjImg->comps[1].prec - 1) : 0);
+			b = opjImg->comps[2].data[i*iconImg->imageWidth+j];
+			b += (opjImg->comps[2].sgnd ? 1 << (opjImg->comps[2].prec - 1) : 0);
+			a = opjImg->comps[3].data[i*iconImg->imageWidth+j];
+			a += (opjImg->comps[3].sgnd ? 1 << (opjImg->comps[3].prec - 1) : 0);
+			
+			dst_pixel = (icns_rgba_t *)&(dataPtr[rowOffset + colOffset]);
+			
+			dst_pixel->r = (icns_byte_t) ((r >> adjust[0])+((r >> (adjust[0]-1))%2));
+			dst_pixel->g = (icns_byte_t) ((g >> adjust[1])+((g >> (adjust[1]-1))%2));
+			dst_pixel->b = (icns_byte_t) ((b >> adjust[2])+((b >> (adjust[2]-1))%2));
+			dst_pixel->a = (icns_byte_t) ((a >> adjust[3])+((a >> (adjust[3]-1))%2));
+		}
+	}
+	
+	return error;
+}
+
+int icns_opj_image_to_jp2(icns_image_t *iconImg, icns_size_t *dataSizeOut, icns_byte_t **dataPtrOut)
+{
+	int		     error = ICNS_STATUS_OK;
+	opj_event_mgr_t      event_mgr;
+	opj_cparameters_t    parameters;
+	OPJ_COLOR_SPACE      color_space = CLRSPC_SRGB;
+	opj_image_cmptparm_t cmptparm[4];
+	opj_image_t	     *opjImg = NULL;
+	icns_byte_t	     *dataPtr = NULL;
+	int                  i, j;
+	int                  rowOffset, colOffset;
+	opj_cinfo_t          *cinfo = NULL;
+	opj_cio_t            *cio = NULL;
+	int                  success = 0;
+	
+	if(iconImg == NULL)
 	{
 		icns_print_err("icns_opj_image_to_jp2: Image is NULL!\n");
 		return ICNS_STATUS_NULL_PARAM;
@@ -565,168 +696,268 @@ int icns_opj_image_to_jp2(icns_image_t *image, icns_size_t *dataSizeOut, icns_by
 		icns_print_err("icns_opj_image_to_jp2: Data ref is NULL!\n");
 		return ICNS_STATUS_NULL_PARAM;
 	}
-	
-	icns_print_err("icns_opj_image_to_jp2: libicns doesn't support writing jp2 images with libopenjpeg yet!\n");
-	error = ICNS_STATUS_UNSUPPORTED;
-	
-	return error;
-}
 
-// Convert from uncompressed opj data to icns_image_t
-int icns_opj_to_image(opj_image_t *image, icns_image_t *outIcon)
-{
-	int		error = ICNS_STATUS_OK;
-	icns_uint32_t	iconWidth = 0;
-	icns_uint32_t	iconHeight = 0;
-	icns_uint32_t	iconPixelDepth = 0;
-	icns_uint32_t	iconChannels = 0;
-	unsigned long	iconDataSize = 0;
-	unsigned long	blockSize = 0;
-	icns_sint8_t    adjust[4] = {0,0,0,0};
-	icns_byte_t	*dataPtr = NULL;
-	int c, i,j;
-	
-	if(image == NULL)
+	if(iconImg->imageChannels != 4)
 	{
-		icns_print_err("icns_opj_to_image: OpenJPEG image is NULL!\n");
-		return ICNS_STATUS_NULL_PARAM;
+		icns_print_err("icns_image_to_opj: number if channels in input image should be 4!\n");
+		return ICNS_STATUS_INVALID_DATA;
+	
 	}
-	
-	if(outIcon == NULL)
-	{
-		icns_print_err("icns_opj_to_image: Icon out is NULL!\n");
-		return ICNS_STATUS_NULL_PARAM;
-	}
-	
-	iconWidth = image->comps[0].w;
-	iconHeight = image->comps[0].h;
-	iconChannels = image->numcomps;
-	iconPixelDepth = image->comps[0].prec;
-	
-	blockSize = iconWidth * iconPixelDepth; // * iconChannels ?
-	iconDataSize = iconHeight * blockSize;
-	outIcon->imageWidth = iconWidth;
-	outIcon->imageHeight = iconHeight;
-	outIcon->imageChannels = iconChannels;
-	outIcon->imagePixelDepth = iconPixelDepth;
-	outIcon->imageDataSize = iconDataSize;
-	outIcon->imageData = (icns_byte_t *)malloc(iconDataSize);
-	if(!outIcon->imageData) {
-		icns_print_err("icns_create_family: Unable to allocate memory block of size: %d!\n",iconDataSize);
-		return ICNS_STATUS_NO_MEMORY;
-	}
-	memset(outIcon->imageData,0,iconDataSize);
-	
-	dataPtr = outIcon->imageData;
-	
-	for(c = 0; c < 4; c++)
-	{
-		int depth = image->comps[c].prec;
-		if (depth > 8) {
-			adjust[c] = depth - 8;
-			#ifdef ICNS_DEBUG
-			printf("BMP CONVERSION: Will be trucating component %d (%d bits) by %d bits to 8 bits.\n",c,depth,adjust[c]);
-			#endif
-		} else {
-			adjust[c] = 0;
-		}
-	}
-	
-	for (i = 0; i < iconHeight; i++) {
-		for(j = 0; j < iconWidth; j++) {
-			icns_rgba_t *dst_pixel;
-			int r, g, b, a;
-						
-			r = image->comps[0].data[i*iconWidth+j];
-			r += (image->comps[0].sgnd ? 1 << (image->comps[0].prec - 1) : 0);
-			g = image->comps[1].data[i*iconWidth+j];
-			g += (image->comps[1].sgnd ? 1 << (image->comps[1].prec - 1) : 0);
-			b = image->comps[2].data[i*iconWidth+j];
-			b += (image->comps[2].sgnd ? 1 << (image->comps[2].prec - 1) : 0);
-			a = image->comps[3].data[i*iconWidth+j];
-			a += (image->comps[3].sgnd ? 1 << (image->comps[3].prec - 1) : 0);
-			
-			dst_pixel = (icns_rgba_t *)&(dataPtr[i*iconWidth*iconChannels+j*iconChannels]);
-			
-			dst_pixel->r = (icns_byte_t) ((r >> adjust[0])+((r >> (adjust[0]-1))%2));
-			dst_pixel->g = (icns_byte_t) ((g >> adjust[1])+((g >> (adjust[1]-1))%2));
-			dst_pixel->b = (icns_byte_t) ((b >> adjust[2])+((b >> (adjust[2]-1))%2));
-			dst_pixel->a = (icns_byte_t) ((a >> adjust[3])+((a >> (adjust[3]-1))%2));
-		}
-	}
-	
-	return error;
-}
 
-// Decompress jp2
-int icns_opj_jp2_dec(icns_size_t dataSize, icns_byte_t *dataPtr, opj_image_t **imageOut)
-{
-	opj_dparameters_t parameters;	/* decompression parameters */
-	opj_dinfo_t* dinfo = NULL;
-	opj_event_mgr_t event_mgr;		/* event manager */
-	opj_cio_t *cio = NULL;
-	opj_image_t *image = NULL;
-
-	/* configure the event callbacks (not required) */
+	if(iconImg->imagePixelDepth != 8)
+	{
+		// Maybe support 64/128-bit images (16/32-bits per channel) in the future?
+		icns_print_err("icns_image_to_opj: jp2 images currently need to be 8 bits per pixel per channel!\n");
+		return ICNS_STATUS_INVALID_DATA;
+	}
+	
+	*dataSizeOut = 0;
+	*dataPtrOut = NULL;
+	
 	memset(&event_mgr, 0, sizeof(opj_event_mgr_t));
 	event_mgr.error_handler = icns_opj_error_callback;
 	event_mgr.warning_handler = icns_opj_warning_callback;
 	event_mgr.info_handler = icns_opj_info_callback;
+	
+	opj_set_default_encoder_parameters(&parameters);
 
-	/* get a decoder handle */
-	dinfo = opj_create_decompress(CODEC_JP2);
-
-	/* set decoding parameters to default values */
-	opj_set_default_decoder_parameters(&parameters);
-
-	/* catch events using our callbacks and give a local context */
-	opj_set_event_mgr((opj_common_ptr)dinfo, &event_mgr, stderr);
-
-	opj_setup_decoder(dinfo, &parameters);
-
-	/* open a byte stream */
-	cio = opj_cio_open((opj_common_ptr)dinfo, dataPtr, dataSize);
-
-	image = opj_decode(dinfo, cio);
-	if(!image) {
-		icns_print_err("icns_opj_jp2_dec: failed to decode image!\n");
-		opj_destroy_decompress(dinfo);
-		opj_cio_close(cio);
-		return ICNS_STATUS_INVALID_DATA;
-	} else {
-		*imageOut = image;	
+	parameters.tcp_numlayers = 1;
+	parameters.tcp_rates[0] = 1;
+	parameters.cp_disto_alloc = 1;
+	parameters.irreversible = 0;
+	
+	memset(&cmptparm[0], 0, 4 * sizeof(opj_image_cmptparm_t));
+	for(i = 0; i < 4; i++) {
+		
+		cmptparm[i].w = iconImg->imageWidth;
+		cmptparm[i].h = iconImg->imageHeight;
+		cmptparm[i].dx = 1;
+		cmptparm[i].dy = 1;
+		cmptparm[i].prec = iconImg->imagePixelDepth;
+		cmptparm[i].bpp = iconImg->imagePixelDepth;
+		cmptparm[i].sgnd = 0;
 	}
+	
+	opjImg = opj_image_create(4, &cmptparm[0], color_space);
+	if(!opjImg) {
+		icns_print_err("icns_image_to_opj: Unable to create new image!\n");
+		return ICNS_STATUS_INVALID_DATA;
+	}
+	
+	opjImg->x0 = 0;
+	opjImg->y0 = 0;
+	opjImg->x1 = iconImg->imageWidth;
+	opjImg->y1 = iconImg->imageHeight; 
+	
+	dataPtr = iconImg->imageData;
+	for (i = 0; i < iconImg->imageHeight; i++) {
+		rowOffset = i * iconImg->imageChannels * iconImg->imageWidth;
+		for(j = 0; j < iconImg->imageWidth; j++) {
+			icns_rgba_t *src_pixel;
+			int p = i * iconImg->imageWidth + j;
+			
+			colOffset = j * iconImg->imageChannels;
+			
+			src_pixel = (icns_rgba_t *)&(dataPtr[rowOffset + colOffset]);
+			
+			opjImg->comps[0].data[p] = src_pixel->r;
+			opjImg->comps[1].data[p] = src_pixel->g;
+			opjImg->comps[2].data[p] = src_pixel->b;
+			opjImg->comps[3].data[p] = src_pixel->a;
+		}
+	}
+	
+	cinfo = opj_create_compress(CODEC_JP2);
+	opj_set_event_mgr((opj_common_ptr)cinfo, &event_mgr, stderr);
+	opj_setup_encoder(cinfo, &parameters, opjImg);
 
-	/* close the byte stream */
-	opj_cio_close(cio);
-	opj_destroy_decompress(dinfo);
+	cio = opj_cio_open((opj_common_ptr)cinfo, NULL, 0);
 
-	return ICNS_STATUS_OK;
+	success = opj_encode(cinfo, cio, opjImg, NULL);
+	if (!success) {
+		opj_cio_close(cio);
+		icns_print_err("icns_opj_jp2_enc: Error while encoding jp2 data!\n");
+		error = ICNS_STATUS_INVALID_DATA;
+		goto exception;
+	}
+	
+	*dataSizeOut = cio_tell(cio) + 34;
+	*dataPtrOut = (icns_byte_t *)malloc(*dataSizeOut);
+
+	if(!(*dataPtrOut))
+	{
+		icns_print_err("icns_jas_image_to_jp2: Unable to allocate memory block of size: %d!\n",(int)*dataSizeOut);
+		error = ICNS_STATUS_NO_MEMORY;
+		goto exception;
+	}
+	
+	memcpy(*dataPtrOut,cio->buffer,*dataSizeOut - 34);
+	
+	icns_place_jp2_cdef(*dataPtrOut,*dataSizeOut);
+	
+exception:
+	if(opjImg) {
+		opj_image_destroy(opjImg);
+		opjImg = NULL;
+	}
+	if(cio) {
+		opj_cio_close(cio);
+		cio = NULL;
+	}
+	if(cinfo) {
+		opj_destroy_compress(cinfo);
+		cinfo = NULL;
+	}
+	
+	return error;
 }
 
-
-/**
-sample error callback expecting a FILE* client object
-*/
 void icns_opj_error_callback(const char *msg, void *client_data) {
-	//FILE *stream = (FILE*)client_data;
-	//fprintf(stream, "[ERROR] %s", msg);
 }
-/**
-sample warning callback expecting a FILE* client object
-*/
+
 void icns_opj_warning_callback(const char *msg, void *client_data) {
-	//FILE *stream = (FILE*)client_data;
-	//fprintf(stream, "[WARNING] %s", msg);
 }
-/**
-sample debug callback expecting no client object
-*/
+
 void icns_opj_info_callback(const char *msg, void *client_data) {
-	//(void)client_data;
-	//fprintf(stdout, "[INFO] %s", msg);
 }
 
 #endif /* ifdef ICNS_OPENJPEG */
 
 
+// Add cdef block - requires that dataPtr has 34 extra bytes!
+void icns_place_jp2_cdef(icns_byte_t *dataPtr, icns_size_t dataSize)
+{
+	icns_sint32_t	offset = 0;
+	icns_uint32_t	blocksize = 0;
+	icns_uint32_t	blocktype = 0;
+	icns_byte_t	*bytes = NULL;
+	icns_uint32_t	headeroffs = 0;
+	icns_uint32_t	headersize = 0;
+	icns_byte_t	cdef[34];
+	
+	// Initialize CDEF block
+	
+	// big endian block size - 34 bytes
+	cdef[0] = 0x00;
+	cdef[1] = 0x00;
+	cdef[2] = 0x00;
+	cdef[3] = 0x22;
+	
+	// id = 'cdef'
+	cdef[4] = 'c';
+	cdef[5] = 'd';
+	cdef[6] = 'e';
+	cdef[7] = 'f';
+	
+	// component count - 4
+	cdef[8] = 0x00;
+	cdef[9] = 0x04;
+	
+	// component number: 0
+	cdef[10] = 0x00;
+	cdef[11] = 0x00;
+	// component type: 0=color component
+	cdef[12] = 0x00;
+	cdef[13] = 0x00;
+	// component association: 1=color 1 assoc
+	cdef[14] = 0x00;
+	cdef[15] = 0x01;
+	
+	// component number: 3
+	cdef[16] = 0x00;
+	cdef[17] = 0x03;
+	// component type: 1=opacity component
+	cdef[18] = 0x00;
+	cdef[19] = 0x01;
+	// component association: 0=whole image assoc
+	cdef[20] = 0x00;
+	cdef[21] = 0x00;
+	
+	// component number: 1
+	cdef[22] = 0x00;
+	cdef[23] = 0x01;
+	// component type: 0=color component
+	cdef[24] = 0x00;
+	cdef[25] = 0x00;
+	// component association: 2=color 2 assoc
+	cdef[26] = 0x00;
+	cdef[27] = 0x02;
+	
+	// component number: 2
+	cdef[28] = 0x00;
+	cdef[29] = 0x02;
+	// component type: 0=color component
+	cdef[30] = 0x00;
+	cdef[31] = 0x00;
+	// component association: 3=color 3 assoc
+	cdef[32] = 0x00;
+	cdef[33] = 0x03;
+	
+	// skip 12 bytes to pass signature block
+	offset = 12;
+	bytes = dataPtr + offset;
+	
+	// look for jp2h block (0x6A73268)
+	do
+	{
+		blocksize = bytes[3]|bytes[2]<<8|bytes[1]<<16|bytes[0]<<24;
+		offset += 4;
+		bytes = dataPtr + offset;
+		blocktype = bytes[3]|bytes[2]<<8|bytes[1]<<16|bytes[0]<<24;
+		if(blocktype == 0x6A703268) {
+			offset += 4;
+			bytes = dataPtr + offset;
+		} else {
+			offset = offset + (blocksize - 4);
+			bytes = dataPtr + offset;
+		}
+	} while(blocktype != 0x6A703268 && offset < dataSize);
+	
+	// make sure we found the jp2h block
+	if(blocktype == 0x6A703268)
+	{
+		uint32_t c = 0;
+		
+		// keep track of the current header offset and size
+		headeroffs = offset;
+		headersize = blocksize-8;
+		
+		// update the header block size
+		bytes = dataPtr + (headeroffs-8);
+		blocksize += 34;
+		bytes[0] = blocksize >> 24;
+		bytes[1] = blocksize >> 16;
+		bytes[2] = blocksize >> 8;
+		bytes[3] = blocksize;
+		
+		// look for colr block (0x636F6C72)
+		offset = headeroffs;
+		bytes = dataPtr + offset;
+		do
+		{
+			blocksize = bytes[3]|bytes[2]<<8|bytes[1]<<16|bytes[0]<<24;
+			offset += 4;
+			bytes = dataPtr + offset;
+			blocktype = bytes[3]|bytes[2]<<8|bytes[1]<<16|bytes[0]<<24;
+			offset = offset + (blocksize - 4);
+			bytes = dataPtr + offset;
+		} while(blocktype != 0x636F6C72 && offset < headeroffs+headersize);
+		
+		// if we have colr block, place cdef after it
+		// otherwise, place cdef block at start of ihdr
+		if(blocktype != 0x636F6C72) {
+			offset = headeroffs;
+		}
+	
+		// shuffle the bytes backwards to make room for the cdef
+		bytes = dataPtr;
+		for(c = (dataSize)-35; c >= offset; c--) {
+			bytes[c+34] = bytes[c];
+		}
+		
+		// copy in the cdef block
+		for(c = 0; c < 34; c++) {
+			bytes[c+offset] = cdef[c];
+		}
+	}
+}
