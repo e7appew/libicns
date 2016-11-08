@@ -2,6 +2,7 @@
 
 #export DH_VERBOSE=1
 
+export CPPFLAGS += $(shell pkg-config --cflags libopenjp2)
 %:
 	dh $@ --parallel --with autoreconf
 
