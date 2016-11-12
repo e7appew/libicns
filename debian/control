@@ -9,7 +9,7 @@ Build-Depends:
  libjpeg-dev,
  libpng-dev,
  pkg-config
-Standards-Version: 3.9.6
+Standards-Version: 3.9.8
 Section: libs
 Homepage: http://icns.sourceforge.net/
 Vcs-Git: git://git.code.sf.net/p/icns/code/
