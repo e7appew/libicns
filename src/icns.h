@@ -3,7 +3,7 @@ File:       icns.h
 Copyright (C) 2001-2012 Mathew Eis <mathew@eisbox.net>
 Copyright (C) 2002 Chenxiao Zhao <chenxiao.zhao@gmail.com>
 
-With the exception of the limited portions mentioned, this library
+With the exception of the limited portions mentiond, this library
 is free software; you can redistribute it and/or modify it under
 the terms of the GNU Lesser General Public License as published
 by the Free Software Foundation; either version 2.1 of the License,
@@ -16,15 +16,17 @@ Lesser General Public License for more details.
 
 You should have received a copy of the GNU Lesser General Public
 License along with this library; if not, write to the
-Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, 
 Boston, MA 02110-1301, USA.
 */
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <string.h>
+
 #ifndef _ICNS_H_
 #define	_ICNS_H_
-
-#include <stdio.h>
-#include <stdint.h>
 
 /* basic data types */
 typedef uint8_t         icns_bool_t;
@@ -90,12 +92,6 @@ typedef struct icns_icon_info_t
 
 #define ICNS_ICON_VERSION             0x69636E56  // "icnV"
 
-#define ICNS_256x256_2X_32BIT_ARGB_DATA 0x69633134 // "ic14"
-#define ICNS_128x128_2X_32BIT_ARGB_DATA 0x69633133 // "ic13"
-#define ICNS_32x32_2X_32BIT_ARGB_DATA 0x69633132 // "ic12"
-#define ICNS_16x16_2X_32BIT_ARGB_DATA 0x69633131 // "ic11"
-#define ICNS_512x512_2X_32BIT_ARGB_DATA 0x69633130 // "ic10"
-
 #define ICNS_1024x1024_32BIT_ARGB_DATA 0x69633130 // "ic10"
 
 #define ICNS_512x512_32BIT_ARGB_DATA  0x69633039  // "ic09"
@@ -138,8 +134,8 @@ typedef struct icns_icon_info_t
 #define ICNS_OPEN_VARIANT             0x6F70656E  // "open"
 #define ICNS_OPEN_DROP_VARIANT        0x6F647270  // "odrp"
 
-#define ICNS_NULL_DATA                0x00000000
-#define ICNS_NULL_MASK                0x00000000
+#define ICNS_NULL_DATA                0x00000000 
+#define ICNS_NULL_MASK                0x00000000 
 
 /* icns file / resource type constants */
 
@@ -147,7 +143,7 @@ typedef struct icns_icon_info_t
 
 #define ICNS_MACBINARY_TYPE           0x6D42494E  // "mBIN"
 
-#define ICNS_NULL_TYPE                0x00000000
+#define ICNS_NULL_TYPE                0x00000000 
 
 /* icns error return values */
 
@@ -205,11 +201,9 @@ int icns_image_to_jp2(icns_image_t *image, icns_size_t *dataSizeOut, icns_byte_t
 // icns_utils.c
 icns_icon_info_t icns_get_image_info_for_type(icns_type_t iconType);
 icns_type_t icns_get_mask_type_for_icon_type(icns_type_t);
-icns_type_t	icns_get_type_from_image_info_advanced(icns_icon_info_t iconInfo, icns_bool_t isHiDPI);
 icns_type_t icns_get_type_from_image_info(icns_icon_info_t iconInfo);
 icns_type_t icns_get_type_from_image(icns_image_t iconImage);
 icns_type_t icns_get_type_from_mask(icns_image_t iconImage);
-icns_bool_t icns_get_is_hidpi(icns_type_t iconType);
 icns_bool_t icns_types_equal(icns_type_t typeA,icns_type_t typeB);
 icns_bool_t icns_types_not_equal(icns_type_t typeA,icns_type_t typeB);
 const char * icns_type_str(icns_type_t type, char *strbuf);
